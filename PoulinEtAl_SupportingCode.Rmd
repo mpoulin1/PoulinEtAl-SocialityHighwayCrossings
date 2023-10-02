@@ -1,0 +1,414 @@
+---
+title: "Run models for Poulin et al. 'Sociality helps navigate anthropogenic risks: evidence from elk crossing a major highway'"
+author: "Marie-Pier Poulin"
+date: "2023-10-02"
+output: html_document
+---
+
+# Description of the data, code and file structure
+
+The following code allows to run models to investigate the effect of sociality on the probability of crossing a major highway by elk in Yoho National Park (British Columbia). The dataset is described below, with details on column names and units of each variable.
+
+Data: PoulinEtAl2023-hourlyTravelSteps_wSocialPhenotypes.csv
+
+This dataset includes all observed hourly steps classified as 'traveling' by the HMM, during which at least 2 collared elk were together (i.e., within 100-m of each other during simultaneous fixes within a 15-min interval). It also includes characteristics such as traffic volume recorded on the Trans-Canada highway during the step, season, and social phenotypes of the focal individual and of its group. Below is a description of the columns in the .csv file:
+
+- elkID: Tag number of the focal individual (i.e., elk that performed the movement step).
+- winterSeason: Extended winter season (i.e., period when elk were on their winter range or range near the road) // w2 = 2019-2020 and w3 = 2020-2021.
+- elkID_winterSeason: Unique combination of the focal individual and extended winter season - used as a random intercept in our models to account for pseudoreplication within individuals and winter seasons.
+- season: Identifies if the step was during Fall (August to November), Winter (December to February), or Spring (March to June).
+
+- hwyCros: Highway crossing // 0 = the step did not cross the Trans-Canada highway (TCH) and 1 = the step crossed the TCH.
+- trafficVol: Hourly traffic volume on the TCH for the day and hour at which the step was observed.
+- trafficVol100: Hourly traffic volume (in hundreds of cars per hour) for the day and hour at which the step was observed.
+
+- nbrCollars: Number of collared elk in the group.
+- propCollars: Proportion of all collars that were deployed during the day of the steps that were in the group.
+- groupSize: Predicted total group size, based on models of total group size from propCollars using field observations of groups (see Appendix S2 for more info).
+
+[Social phenotypes of individuals]
+
+- indivDominance: Mean elo-score of the focal individual, based on observations of agonistic interactions between pairs of collared elk.
+- indivSocConnectedness: Scaled eigenvector centrality of the focal individual, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
+- indivSocFamiliarity: Median simple ratio index of dyadic association between focal individual and its group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
+- indivSocStability: Median number of hours since the fusion of dyads between the focal individual and its group members.
+
+
+[Social phenotypes of groups]
+
+- groupDominance: Mean elo-score of most dominant individual in the group (i.e., maximum elo-score of group members), based on observations of agonistic interactions between pairs of collared elk.
+- groupSocConnectedness: Median scaled eigenvector centrality of all group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
+- groupSocFamiliarity: Median simple ratio index of all dyadic associations between group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
+- groupSocStability: Median number of hours since the fusion of all dyads of group members.
+
+
+# Code
+
+## 0) Load data and set working directory
+
+```{r Libraries}
+
+# Libraries 
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(glmmTMB)
+
+```
+
+```{r setup, include=FALSE}
+
+# Set working directory
+knitr::opts_knit$set(root.dir = "G:/SET WORKING DIRECTORY HERE/")
+
+```
+
+```{r Load travel steps ready for models}
+
+allData <- read.csv("./PoulinEtAl2023-hourlyTravelSteps_wSocialPhenotypes.csv")
+
+```
+
+
+## 1) Traffic volume
+
+Run a model with only traffic volume and season as predictors of highway crossings.
+
+```{r}
+
+# Run model
+m1 <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m1)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m1) 
+
+```
+
+
+## 2) Group size
+
+Run a model with group size, traffic volume and season as predictors of highway crossings.
+
+```{r}
+
+# Run models
+m2 <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m2)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m2) 
+
+```
+
+
+## 3) Add social phenotypes to models of highway crossings
+
+Run models with social phenotypes of individuals or groups, with group size, traffic volume and season as predictors of highway crossings.
+
+
+### Dominance
+
+```{r Social phenotype of individuals}
+
+# Run models
+m3_indivDom <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                indivDominance +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_indivDom)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_indivDom)
+
+```
+
+```{r Social phenotype of groups}
+
+# Run models
+m3_groupDom <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                groupDominance +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_groupDom)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_groupDom)
+
+```
+
+```{r Compare models with AIC}
+
+AIC(m3_indivDom, m3_groupDom)
+
+```
+
+
+### Social connectedness
+
+```{r Social phenotype of individuals}
+
+# Run models
+m3_indivSocCon <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                indivSocConnectedness +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_indivSocCon)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_indivSocCon)
+
+```
+
+```{r Social phenotype of groups}
+
+# Run models
+m3_groupSocCon <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                groupSocConnectedness +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_groupSocCon)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_groupSocCon)
+
+```
+
+```{r Compare models with AIC}
+
+AIC(m3_indivSocCon, m3_groupSocCon)
+
+```
+
+
+### Social familiarity
+
+```{r Social phenotype of individuals}
+
+# Run models
+m3_indivSocFam <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                indivSocFamiliarity +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_indivSocFam)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_indivSocFam)
+
+```
+
+```{r Social phenotype of groups}
+
+# Run models
+m3_groupSocFam <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                groupSocFamiliarity +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_groupSocFam)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_groupSocFam) # 0.30267100
+
+```
+
+```{r Compare models with AIC}
+
+AIC(m3_indivSocFam, m3_groupSocFam)
+
+```
+
+
+### Social stability
+
+```{r Social phenotype of individuals}
+
+# Run models
+m3_indivSocStab <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                indivSocStability+
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_indivSocStab)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_indivSocStab)
+
+```
+
+```{r Social phenotype of groups}
+
+# Run models
+m3_groupSocStab <- glmmTMB(hwyCros ~ trafficVol +
+                season +
+                groupSize +
+                groupSocStability +
+                (1|elkID_winterSeason),
+              data = allData,
+              family = "binomial")
+
+# Look at summary
+summary(m3_groupSocStab)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m3_groupSocStab)
+
+```
+
+```{r Compare models with AIC}
+
+AIC(m3_indivSocStab, m3_groupSocStab)
+
+```
+
+
+# 4) Interaction between social phenotypes and traffic volume
+
+Run models with social phenotypes of individuals or groups in interaction with traffic volume, as well as group size, and season as predictors of highway crossings.
+
+
+### Group size
+
+```{r}
+
+# Run models
+m4_groupSize <- glmmTMB(hwyCros ~ trafficVol100*groupSize +
+                season +
+                (1|elkID_winterSeason),
+                data = allData,
+                family = "binomial")
+
+# Look at summary
+summary(m4_groupSize)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m4_groupSize)
+
+```
+
+
+### Dominance
+
+```{r}
+
+# Run models
+m4_dom <- glmmTMB(hwyCros ~ trafficVol100*groupDominance +
+                    groupSize +
+                    (1|elkID_winterSeason),
+                    data = allData,
+                    family = "binomial")
+
+# Look at summary
+summary(m4_dom) 
+
+# Get R^2
+MuMIn::r.squaredGLMM(m4_dom)
+
+```
+
+
+### Social connectedness
+
+```{r}
+
+# Run models
+m4_socCon <- glmmTMB(hwyCros ~ trafficVol100*groupSocConnectedness +
+                    groupSize +
+                    (1|elkID_winterSeason),
+                    data = allData,
+                    family = "binomial")
+
+# Look at summary
+summary(m4_socCon)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m4_socCon)
+
+```
+
+
+### Social familiarity
+
+```{r}
+
+# Run models
+m4_socFam <- glmmTMB(hwyCros ~ trafficVol100*groupSocFamiliarity +
+                    groupSize +
+                    (1|elkID_winterSeason),
+                    data = allData,
+                    family = "binomial")
+
+# Look at summary
+summary(m4_socFam) 
+
+# Get R^2
+MuMIn::r.squaredGLMM(m4_socFam) 
+
+```
+
+
+### Social stability
+
+```{r}
+
+# Run models
+m4_socStab <- glmmTMB(hwyCros ~ trafficVol100*indivSocStability +
+                    groupSize +
+                    (1|elkID_winterSeason),
+                    data = allData,
+                    family = "binomial")
+
+# Look at summary
+summary(m4_socStab)
+
+# Get R^2
+MuMIn::r.squaredGLMM(m4_socStab)
+
+```
+
