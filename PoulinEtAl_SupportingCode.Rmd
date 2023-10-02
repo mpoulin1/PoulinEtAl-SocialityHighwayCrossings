@@ -23,7 +23,7 @@ This dataset includes all observed hourly steps classified as 'traveling' by the
 - trafficVol100: Hourly traffic volume (in hundreds of cars per hour) for the day and hour at which the step was observed.
 
 - nbrCollars: Number of collared elk in the group.
-- propCollars: Proportion of all collars that were deployed during the day of the steps that were in the group.
+- propCollars: Proportion of all deployed collars that were in the group when the step was observed.
 - groupSize: Predicted total group size, based on models of total group size from propCollars using field observations of groups (see Appendix S2 for more info).
 
 [Social phenotypes of individuals]
@@ -31,12 +31,12 @@ This dataset includes all observed hourly steps classified as 'traveling' by the
 - indivDominance: Mean elo-score of the focal individual, based on observations of agonistic interactions between pairs of collared elk.
 - indivSocConnectedness: Scaled eigenvector centrality of the focal individual, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
 - indivSocFamiliarity: Median simple ratio index of dyadic association between focal individual and its group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
-- indivSocStability: Median number of hours since the fusion of dyads between the focal individual and its group members.
+- indivSocStability: Median number of hours since the fusion of dyads containing the focal individual and its group members.
 
 
 [Social phenotypes of groups]
 
-- groupDominance: Mean elo-score of most dominant individual in the group (i.e., maximum elo-score of group members), based on observations of agonistic interactions between pairs of collared elk.
+- groupDominance: Mean elo-score of the most dominant individual in the group (i.e., maximum elo-score of group members), based on observations of agonistic interactions between pairs of collared elk.
 - groupSocConnectedness: Median scaled eigenvector centrality of all group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
 - groupSocFamiliarity: Median simple ratio index of all dyadic associations between group members, based on proximity-based social networks of all collared elk for the 14 days prior to the step.
 - groupSocStability: Median number of hours since the fusion of all dyads of group members.
@@ -63,7 +63,7 @@ knitr::opts_knit$set(root.dir = "G:/SET WORKING DIRECTORY HERE/")
 
 ```
 
-```{r Load travel steps ready for models}
+```{r Load travel steps ready for models from working directory}
 
 allData <- read.csv("./PoulinEtAl2023-hourlyTravelSteps_wSocialPhenotypes.csv")
 
